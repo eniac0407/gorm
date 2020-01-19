@@ -302,9 +302,9 @@ func runMigration() {
 }
 
 func TestIndexes(t *testing.T) {
-	if err := DB.Model(&Email{}).AddIndex("idx_email_email", "email").Error; err != nil {
-		t.Errorf("Got error when tried to create index: %+v", err)
-	}
+	// if err := DB.Model(&Email{}).AddIndex("idx_email_email", "email").Error; err != nil {
+	// 	t.Errorf("Got error when tried to create index: %+v", err)
+	// }
 
 	scope := DB.NewScope(&Email{})
 	if !scope.Dialect().HasIndex(scope.TableName(), "idx_email_email") {
@@ -319,9 +319,9 @@ func TestIndexes(t *testing.T) {
 		t.Errorf("Email's index idx_email_email should be deleted")
 	}
 
-	if err := DB.Model(&Email{}).AddIndex("idx_email_email_and_user_id", "user_id", "email").Error; err != nil {
-		t.Errorf("Got error when tried to create index: %+v", err)
-	}
+	// if err := DB.Model(&Email{}).AddIndex("idx_email_email_and_user_id", "user_id", "email").Error; err != nil {
+	// 	t.Errorf("Got error when tried to create index: %+v", err)
+	// }
 
 	if !scope.Dialect().HasIndex(scope.TableName(), "idx_email_email_and_user_id") {
 		t.Errorf("Email should have index idx_email_email_and_user_id")

@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"database/sql"
 	"database/sql/driver"
-	"errors"
+	// "errors"
 	"fmt"
 	"reflect"
 	"regexp"
@@ -103,140 +103,140 @@ func (scope *Scope) SkipLeft() {
 }
 
 // Fields get value's fields
-func (scope *Scope) Fields() []*Field {
-	if scope.fields == nil {
-		var (
-			fields             []*Field
-			indirectScopeValue = scope.IndirectValue()
-			isStruct           = indirectScopeValue.Kind() == reflect.Struct
-		)
+// func (scope *Scope) Fields() []*Field {
+// 	if scope.fields == nil {
+// 		var (
+// 			fields             []*Field
+// 			indirectScopeValue = scope.IndirectValue()
+// 			isStruct           = indirectScopeValue.Kind() == reflect.Struct
+// 		)
 
-		for _, structField := range scope.GetModelStruct().StructFields {
-			if isStruct {
-				fieldValue := indirectScopeValue
-				for _, name := range structField.Names {
-					if fieldValue.Kind() == reflect.Ptr && fieldValue.IsNil() {
-						fieldValue.Set(reflect.New(fieldValue.Type().Elem()))
-					}
-					fieldValue = reflect.Indirect(fieldValue).FieldByName(name)
-				}
-				fields = append(fields, &Field{StructField: structField, Field: fieldValue, IsBlank: isBlank(fieldValue)})
-			} else {
-				fields = append(fields, &Field{StructField: structField, IsBlank: true})
-			}
-		}
-		scope.fields = &fields
-	}
+// 		for _, structField := range scope.GetModelStruct().StructFields {
+// 			if isStruct {
+// 				fieldValue := indirectScopeValue
+// 				for _, name := range structField.Names {
+// 					if fieldValue.Kind() == reflect.Ptr && fieldValue.IsNil() {
+// 						fieldValue.Set(reflect.New(fieldValue.Type().Elem()))
+// 					}
+// 					fieldValue = reflect.Indirect(fieldValue).FieldByName(name)
+// 				}
+// 				fields = append(fields, &Field{StructField: structField, Field: fieldValue, IsBlank: isBlank(fieldValue)})
+// 			} else {
+// 				fields = append(fields, &Field{StructField: structField, IsBlank: true})
+// 			}
+// 		}
+// 		scope.fields = &fields
+// 	}
 
-	return *scope.fields
-}
+// 	return *scope.fields
+// }
 
 // FieldByName find `gorm.Field` with field name or db name
-func (scope *Scope) FieldByName(name string) (field *Field, ok bool) {
-	var (
-		dbName           = ToColumnName(name)
-		mostMatchedField *Field
-	)
+// func (scope *Scope) FieldByName(name string) (field *Field, ok bool) {
+// 	var (
+// 		dbName           = ToColumnName(name)
+// 		mostMatchedField *Field
+// 	)
 
-	for _, field := range scope.Fields() {
-		if field.Name == name || field.DBName == name {
-			return field, true
-		}
-		if field.DBName == dbName {
-			mostMatchedField = field
-		}
-	}
-	return mostMatchedField, mostMatchedField != nil
-}
+// 	for _, field := range scope.Fields() {
+// 		if field.Name == name || field.DBName == name {
+// 			return field, true
+// 		}
+// 		if field.DBName == dbName {
+// 			mostMatchedField = field
+// 		}
+// 	}
+// 	return mostMatchedField, mostMatchedField != nil
+// }
 
 // PrimaryFields return scope's primary fields
-func (scope *Scope) PrimaryFields() (fields []*Field) {
-	for _, field := range scope.Fields() {
-		if field.IsPrimaryKey {
-			fields = append(fields, field)
-		}
-	}
-	return fields
-}
+// func (scope *Scope) PrimaryFields() (fields []*Field) {
+// 	for _, field := range scope.Fields() {
+// 		if field.IsPrimaryKey {
+// 			fields = append(fields, field)
+// 		}
+// 	}
+// 	return fields
+// }
 
 // PrimaryField return scope's main primary field, if defined more that one primary fields, will return the one having column name `id` or the first one
-func (scope *Scope) PrimaryField() *Field {
-	if primaryFields := scope.GetModelStruct().PrimaryFields; len(primaryFields) > 0 {
-		if len(primaryFields) > 1 {
-			if field, ok := scope.FieldByName("id"); ok {
-				return field
-			}
-		}
-		return scope.PrimaryFields()[0]
-	}
-	return nil
-}
+// func (scope *Scope) PrimaryField() *Field {
+// 	if primaryFields := scope.GetModelStruct().PrimaryFields; len(primaryFields) > 0 {
+// 		if len(primaryFields) > 1 {
+// 			if field, ok := scope.FieldByName("id"); ok {
+// 				return field
+// 			}
+// 		}
+// 		return scope.PrimaryFields()[0]
+// 	}
+// 	return nil
+// }
 
 // PrimaryKey get main primary field's db name
-func (scope *Scope) PrimaryKey() string {
-	if field := scope.PrimaryField(); field != nil {
-		return field.DBName
-	}
-	return ""
-}
+// func (scope *Scope) PrimaryKey() string {
+// 	if field := scope.PrimaryField(); field != nil {
+// 		return field.DBName
+// 	}
+// 	return ""
+// }
 
 // PrimaryKeyZero check main primary field's value is blank or not
-func (scope *Scope) PrimaryKeyZero() bool {
-	field := scope.PrimaryField()
-	return field == nil || field.IsBlank
-}
+// func (scope *Scope) PrimaryKeyZero() bool {
+// 	field := scope.PrimaryField()
+// 	return field == nil || field.IsBlank
+// }
 
 // PrimaryKeyValue get the primary key's value
-func (scope *Scope) PrimaryKeyValue() interface{} {
-	if field := scope.PrimaryField(); field != nil && field.Field.IsValid() {
-		return field.Field.Interface()
-	}
-	return 0
-}
+// func (scope *Scope) PrimaryKeyValue() interface{} {
+// 	if field := scope.PrimaryField(); field != nil && field.Field.IsValid() {
+// 		return field.Field.Interface()
+// 	}
+// 	return 0
+// }
 
 // HasColumn to check if has column
-func (scope *Scope) HasColumn(column string) bool {
-	for _, field := range scope.GetStructFields() {
-		if field.IsNormal && (field.Name == column || field.DBName == column) {
-			return true
-		}
-	}
-	return false
-}
+// func (scope *Scope) HasColumn(column string) bool {
+// 	for _, field := range scope.GetStructFields() {
+// 		if field.IsNormal && (field.Name == column || field.DBName == column) {
+// 			return true
+// 		}
+// 	}
+// 	return false
+// }
 
 // SetColumn to set the column's value, column could be field or field's name/dbname
-func (scope *Scope) SetColumn(column interface{}, value interface{}) error {
-	var updateAttrs = map[string]interface{}{}
-	if attrs, ok := scope.InstanceGet("gorm:update_attrs"); ok {
-		updateAttrs = attrs.(map[string]interface{})
-		defer scope.InstanceSet("gorm:update_attrs", updateAttrs)
-	}
+// func (scope *Scope) SetColumn(column interface{}, value interface{}) error {
+// 	var updateAttrs = map[string]interface{}{}
+// 	if attrs, ok := scope.InstanceGet("gorm:update_attrs"); ok {
+// 		updateAttrs = attrs.(map[string]interface{})
+// 		defer scope.InstanceSet("gorm:update_attrs", updateAttrs)
+// 	}
 
-	if field, ok := column.(*Field); ok {
-		updateAttrs[field.DBName] = value
-		return field.Set(value)
-	} else if name, ok := column.(string); ok {
-		var (
-			dbName           = ToDBName(name)
-			mostMatchedField *Field
-		)
-		for _, field := range scope.Fields() {
-			if field.DBName == value {
-				updateAttrs[field.DBName] = value
-				return field.Set(value)
-			}
-			if !field.IsIgnored && ((field.DBName == dbName) || (field.Name == name && mostMatchedField == nil)) {
-				mostMatchedField = field
-			}
-		}
+// 	if field, ok := column.(*Field); ok {
+// 		updateAttrs[field.DBName] = value
+// 		return field.Set(value)
+// 	} else if name, ok := column.(string); ok {
+// 		var (
+// 			dbName           = ToDBName(name)
+// 			mostMatchedField *Field
+// 		)
+// 		for _, field := range scope.Fields() {
+// 			if field.DBName == value {
+// 				updateAttrs[field.DBName] = value
+// 				return field.Set(value)
+// 			}
+// 			if !field.IsIgnored && ((field.DBName == dbName) || (field.Name == name && mostMatchedField == nil)) {
+// 				mostMatchedField = field
+// 			}
+// 		}
 
-		if mostMatchedField != nil {
-			updateAttrs[mostMatchedField.DBName] = value
-			return mostMatchedField.Set(value)
-		}
-	}
-	return errors.New("could not convert column to field")
-}
+// 		if mostMatchedField != nil {
+// 			updateAttrs[mostMatchedField.DBName] = value
+// 			return mostMatchedField.Set(value)
+// 		}
+// 	}
+// 	return errors.New("could not convert column to field")
+// }
 
 // CallMethod call scope value's method, if it is a slice, will call its element's method one by one
 func (scope *Scope) CallMethod(methodName string) {
@@ -341,13 +341,14 @@ func (scope *Scope) QuotedTableName() (name string) {
 
 // CombinedConditionSql return combined condition sql
 func (scope *Scope) CombinedConditionSql() string {
-	joinSQL := scope.joinsSQL()
-	whereSQL := scope.whereSQL()
-	if scope.Search.raw {
-		whereSQL = strings.TrimSuffix(strings.TrimPrefix(whereSQL, "WHERE ("), ")")
-	}
-	return joinSQL + whereSQL + scope.groupSQL() +
-		scope.havingSQL() + scope.orderSQL() + scope.limitAndOffsetSQL()
+	// joinSQL := scope.joinsSQL()
+	// whereSQL := scope.whereSQL()
+	// if scope.Search.raw {
+	// 	whereSQL = strings.TrimSuffix(strings.TrimPrefix(whereSQL, "WHERE ("), ")")
+	// }
+	// return joinSQL + whereSQL + scope.groupSQL() +
+	// 	scope.havingSQL() + scope.orderSQL() + scope.limitAndOffsetSQL()
+	return ""
 }
 
 // Raw set raw sql
@@ -521,149 +522,149 @@ func (scope *Scope) scan(rows *sql.Rows, columns []string, fields []*Field) {
 	}
 }
 
-func (scope *Scope) primaryCondition(value interface{}) string {
-	return fmt.Sprintf("(%v.%v = %v)", scope.QuotedTableName(), scope.Quote(scope.PrimaryKey()), value)
-}
+// func (scope *Scope) primaryCondition(value interface{}) string {
+// 	return fmt.Sprintf("(%v.%v = %v)", scope.QuotedTableName(), scope.Quote(scope.PrimaryKey()), value)
+// }
 
-func (scope *Scope) buildCondition(clause map[string]interface{}, include bool) (str string) {
-	var (
-		quotedTableName  = scope.QuotedTableName()
-		quotedPrimaryKey = scope.Quote(scope.PrimaryKey())
-		equalSQL         = "="
-		inSQL            = "IN"
-	)
+// func (scope *Scope) buildCondition(clause map[string]interface{}, include bool) (str string) {
+// 	var (
+// 		quotedTableName  = scope.QuotedTableName()
+// 		quotedPrimaryKey = scope.Quote(scope.PrimaryKey())
+// 		equalSQL         = "="
+// 		inSQL            = "IN"
+// 	)
 
-	// If building not conditions
-	if !include {
-		equalSQL = "<>"
-		inSQL = "NOT IN"
-	}
+// 	// If building not conditions
+// 	if !include {
+// 		equalSQL = "<>"
+// 		inSQL = "NOT IN"
+// 	}
 
-	switch value := clause["query"].(type) {
-	case sql.NullInt64:
-		return fmt.Sprintf("(%v.%v %s %v)", quotedTableName, quotedPrimaryKey, equalSQL, value.Int64)
-	case int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64:
-		return fmt.Sprintf("(%v.%v %s %v)", quotedTableName, quotedPrimaryKey, equalSQL, value)
-	case []int, []int8, []int16, []int32, []int64, []uint, []uint8, []uint16, []uint32, []uint64, []string, []interface{}:
-		if !include && reflect.ValueOf(value).Len() == 0 {
-			return
-		}
-		str = fmt.Sprintf("(%v.%v %s (?))", quotedTableName, quotedPrimaryKey, inSQL)
-		clause["args"] = []interface{}{value}
-	case string:
-		if isNumberRegexp.MatchString(value) {
-			return fmt.Sprintf("(%v.%v %s %v)", quotedTableName, quotedPrimaryKey, equalSQL, scope.AddToVars(value))
-		}
+// 	switch value := clause["query"].(type) {
+// 	case sql.NullInt64:
+// 		return fmt.Sprintf("(%v.%v %s %v)", quotedTableName, quotedPrimaryKey, equalSQL, value.Int64)
+// 	case int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64:
+// 		return fmt.Sprintf("(%v.%v %s %v)", quotedTableName, quotedPrimaryKey, equalSQL, value)
+// 	case []int, []int8, []int16, []int32, []int64, []uint, []uint8, []uint16, []uint32, []uint64, []string, []interface{}:
+// 		if !include && reflect.ValueOf(value).Len() == 0 {
+// 			return
+// 		}
+// 		str = fmt.Sprintf("(%v.%v %s (?))", quotedTableName, quotedPrimaryKey, inSQL)
+// 		clause["args"] = []interface{}{value}
+// 	case string:
+// 		if isNumberRegexp.MatchString(value) {
+// 			return fmt.Sprintf("(%v.%v %s %v)", quotedTableName, quotedPrimaryKey, equalSQL, scope.AddToVars(value))
+// 		}
 
-		if value != "" {
-			if !include {
-				if comparisonRegexp.MatchString(value) {
-					str = fmt.Sprintf("NOT (%v)", value)
-				} else {
-					str = fmt.Sprintf("(%v.%v NOT IN (?))", quotedTableName, scope.Quote(value))
-				}
-			} else {
-				str = fmt.Sprintf("(%v)", value)
-			}
-		}
-	case map[string]interface{}:
-		var sqls []string
-		for key, value := range value {
-			if value != nil {
-				sqls = append(sqls, fmt.Sprintf("(%v.%v %s %v)", quotedTableName, scope.Quote(key), equalSQL, scope.AddToVars(value)))
-			} else {
-				if !include {
-					sqls = append(sqls, fmt.Sprintf("(%v.%v IS NOT NULL)", quotedTableName, scope.Quote(key)))
-				} else {
-					sqls = append(sqls, fmt.Sprintf("(%v.%v IS NULL)", quotedTableName, scope.Quote(key)))
-				}
-			}
-		}
-		return strings.Join(sqls, " AND ")
-	case interface{}:
-		var sqls []string
-		newScope := scope.New(value)
+// 		if value != "" {
+// 			if !include {
+// 				if comparisonRegexp.MatchString(value) {
+// 					str = fmt.Sprintf("NOT (%v)", value)
+// 				} else {
+// 					str = fmt.Sprintf("(%v.%v NOT IN (?))", quotedTableName, scope.Quote(value))
+// 				}
+// 			} else {
+// 				str = fmt.Sprintf("(%v)", value)
+// 			}
+// 		}
+// 	case map[string]interface{}:
+// 		var sqls []string
+// 		for key, value := range value {
+// 			if value != nil {
+// 				sqls = append(sqls, fmt.Sprintf("(%v.%v %s %v)", quotedTableName, scope.Quote(key), equalSQL, scope.AddToVars(value)))
+// 			} else {
+// 				if !include {
+// 					sqls = append(sqls, fmt.Sprintf("(%v.%v IS NOT NULL)", quotedTableName, scope.Quote(key)))
+// 				} else {
+// 					sqls = append(sqls, fmt.Sprintf("(%v.%v IS NULL)", quotedTableName, scope.Quote(key)))
+// 				}
+// 			}
+// 		}
+// 		return strings.Join(sqls, " AND ")
+// 	case interface{}:
+// 		var sqls []string
+// 		newScope := scope.New(value)
 
-		if len(newScope.Fields()) == 0 {
-			scope.Err(fmt.Errorf("invalid query condition: %v", value))
-			return
-		}
-		scopeQuotedTableName := newScope.QuotedTableName()
-		for _, field := range newScope.Fields() {
-			if !field.IsIgnored && !field.IsBlank {
-				sqls = append(sqls, fmt.Sprintf("(%v.%v %s %v)", scopeQuotedTableName, scope.Quote(field.DBName), equalSQL, scope.AddToVars(field.Field.Interface())))
-			}
-		}
-		return strings.Join(sqls, " AND ")
-	default:
-		scope.Err(fmt.Errorf("invalid query condition: %v", value))
-		return
-	}
+// 		if len(newScope.Fields()) == 0 {
+// 			scope.Err(fmt.Errorf("invalid query condition: %v", value))
+// 			return
+// 		}
+// 		scopeQuotedTableName := newScope.QuotedTableName()
+// 		for _, field := range newScope.Fields() {
+// 			if !field.IsIgnored && !field.IsBlank {
+// 				sqls = append(sqls, fmt.Sprintf("(%v.%v %s %v)", scopeQuotedTableName, scope.Quote(field.DBName), equalSQL, scope.AddToVars(field.Field.Interface())))
+// 			}
+// 		}
+// 		return strings.Join(sqls, " AND ")
+// 	default:
+// 		scope.Err(fmt.Errorf("invalid query condition: %v", value))
+// 		return
+// 	}
 
-	replacements := []string{}
-	args := clause["args"].([]interface{})
-	for _, arg := range args {
-		var err error
-		switch reflect.ValueOf(arg).Kind() {
-		case reflect.Slice: // For where("id in (?)", []int64{1,2})
-			if scanner, ok := interface{}(arg).(driver.Valuer); ok {
-				arg, err = scanner.Value()
-				replacements = append(replacements, scope.AddToVars(arg))
-			} else if b, ok := arg.([]byte); ok {
-				replacements = append(replacements, scope.AddToVars(b))
-			} else if as, ok := arg.([][]interface{}); ok {
-				var tempMarks []string
-				for _, a := range as {
-					var arrayMarks []string
-					for _, v := range a {
-						arrayMarks = append(arrayMarks, scope.AddToVars(v))
-					}
+// 	replacements := []string{}
+// 	args := clause["args"].([]interface{})
+// 	for _, arg := range args {
+// 		var err error
+// 		switch reflect.ValueOf(arg).Kind() {
+// 		case reflect.Slice: // For where("id in (?)", []int64{1,2})
+// 			if scanner, ok := interface{}(arg).(driver.Valuer); ok {
+// 				arg, err = scanner.Value()
+// 				replacements = append(replacements, scope.AddToVars(arg))
+// 			} else if b, ok := arg.([]byte); ok {
+// 				replacements = append(replacements, scope.AddToVars(b))
+// 			} else if as, ok := arg.([][]interface{}); ok {
+// 				var tempMarks []string
+// 				for _, a := range as {
+// 					var arrayMarks []string
+// 					for _, v := range a {
+// 						arrayMarks = append(arrayMarks, scope.AddToVars(v))
+// 					}
 
-					if len(arrayMarks) > 0 {
-						tempMarks = append(tempMarks, fmt.Sprintf("(%v)", strings.Join(arrayMarks, ",")))
-					}
-				}
+// 					if len(arrayMarks) > 0 {
+// 						tempMarks = append(tempMarks, fmt.Sprintf("(%v)", strings.Join(arrayMarks, ",")))
+// 					}
+// 				}
 
-				if len(tempMarks) > 0 {
-					replacements = append(replacements, strings.Join(tempMarks, ","))
-				}
-			} else if values := reflect.ValueOf(arg); values.Len() > 0 {
-				var tempMarks []string
-				for i := 0; i < values.Len(); i++ {
-					tempMarks = append(tempMarks, scope.AddToVars(values.Index(i).Interface()))
-				}
-				replacements = append(replacements, strings.Join(tempMarks, ","))
-			} else {
-				replacements = append(replacements, scope.AddToVars(Expr("NULL")))
-			}
-		default:
-			if valuer, ok := interface{}(arg).(driver.Valuer); ok {
-				arg, err = valuer.Value()
-			}
+// 				if len(tempMarks) > 0 {
+// 					replacements = append(replacements, strings.Join(tempMarks, ","))
+// 				}
+// 			} else if values := reflect.ValueOf(arg); values.Len() > 0 {
+// 				var tempMarks []string
+// 				for i := 0; i < values.Len(); i++ {
+// 					tempMarks = append(tempMarks, scope.AddToVars(values.Index(i).Interface()))
+// 				}
+// 				replacements = append(replacements, strings.Join(tempMarks, ","))
+// 			} else {
+// 				replacements = append(replacements, scope.AddToVars(Expr("NULL")))
+// 			}
+// 		default:
+// 			if valuer, ok := interface{}(arg).(driver.Valuer); ok {
+// 				arg, err = valuer.Value()
+// 			}
 
-			replacements = append(replacements, scope.AddToVars(arg))
-		}
+// 			replacements = append(replacements, scope.AddToVars(arg))
+// 		}
 
-		if err != nil {
-			scope.Err(err)
-		}
-	}
+// 		if err != nil {
+// 			scope.Err(err)
+// 		}
+// 	}
 
-	buff := bytes.NewBuffer([]byte{})
-	i := 0
-	for _, s := range str {
-		if s == '?' && len(replacements) > i {
-			buff.WriteString(replacements[i])
-			i++
-		} else {
-			buff.WriteRune(s)
-		}
-	}
+// 	buff := bytes.NewBuffer([]byte{})
+// 	i := 0
+// 	for _, s := range str {
+// 		if s == '?' && len(replacements) > i {
+// 			buff.WriteString(replacements[i])
+// 			i++
+// 		} else {
+// 			buff.WriteRune(s)
+// 		}
+// 	}
 
-	str = buff.String()
+// 	str = buff.String()
 
-	return
-}
+// 	return
+// }
 
 func (scope *Scope) buildSelectQuery(clause map[string]interface{}) (str string) {
 	switch value := clause["query"].(type) {
@@ -708,63 +709,63 @@ func (scope *Scope) buildSelectQuery(clause map[string]interface{}) (str string)
 	return
 }
 
-func (scope *Scope) whereSQL() (sql string) {
-	var (
-		quotedTableName                                = scope.QuotedTableName()
-		deletedAtField, hasDeletedAtField              = scope.FieldByName("DeletedAt")
-		primaryConditions, andConditions, orConditions []string
-	)
+// func (scope *Scope) whereSQL() (sql string) {
+// 	var (
+// 		quotedTableName                                = scope.QuotedTableName()
+// 		deletedAtField, hasDeletedAtField              = scope.FieldByName("DeletedAt")
+// 		primaryConditions, andConditions, orConditions []string
+// 	)
 
-	if !scope.Search.Unscoped && hasDeletedAtField {
-		sql := fmt.Sprintf("%v.%v IS NULL", quotedTableName, scope.Quote(deletedAtField.DBName))
-		primaryConditions = append(primaryConditions, sql)
-	}
+// 	if !scope.Search.Unscoped && hasDeletedAtField {
+// 		sql := fmt.Sprintf("%v.%v IS NULL", quotedTableName, scope.Quote(deletedAtField.DBName))
+// 		primaryConditions = append(primaryConditions, sql)
+// 	}
 
-	if !scope.PrimaryKeyZero() {
-		for _, field := range scope.PrimaryFields() {
-			sql := fmt.Sprintf("%v.%v = %v", quotedTableName, scope.Quote(field.DBName), scope.AddToVars(field.Field.Interface()))
-			primaryConditions = append(primaryConditions, sql)
-		}
-	}
+// 	if !scope.PrimaryKeyZero() {
+// 		for _, field := range scope.PrimaryFields() {
+// 			sql := fmt.Sprintf("%v.%v = %v", quotedTableName, scope.Quote(field.DBName), scope.AddToVars(field.Field.Interface()))
+// 			primaryConditions = append(primaryConditions, sql)
+// 		}
+// 	}
 
-	for _, clause := range scope.Search.whereConditions {
-		if sql := scope.buildCondition(clause, true); sql != "" {
-			andConditions = append(andConditions, sql)
-		}
-	}
+// 	for _, clause := range scope.Search.whereConditions {
+// 		if sql := scope.buildCondition(clause, true); sql != "" {
+// 			andConditions = append(andConditions, sql)
+// 		}
+// 	}
 
-	for _, clause := range scope.Search.orConditions {
-		if sql := scope.buildCondition(clause, true); sql != "" {
-			orConditions = append(orConditions, sql)
-		}
-	}
+// 	for _, clause := range scope.Search.orConditions {
+// 		if sql := scope.buildCondition(clause, true); sql != "" {
+// 			orConditions = append(orConditions, sql)
+// 		}
+// 	}
 
-	for _, clause := range scope.Search.notConditions {
-		if sql := scope.buildCondition(clause, false); sql != "" {
-			andConditions = append(andConditions, sql)
-		}
-	}
+// 	for _, clause := range scope.Search.notConditions {
+// 		if sql := scope.buildCondition(clause, false); sql != "" {
+// 			andConditions = append(andConditions, sql)
+// 		}
+// 	}
 
-	orSQL := strings.Join(orConditions, " OR ")
-	combinedSQL := strings.Join(andConditions, " AND ")
-	if len(combinedSQL) > 0 {
-		if len(orSQL) > 0 {
-			combinedSQL = combinedSQL + " OR " + orSQL
-		}
-	} else {
-		combinedSQL = orSQL
-	}
+// 	orSQL := strings.Join(orConditions, " OR ")
+// 	combinedSQL := strings.Join(andConditions, " AND ")
+// 	if len(combinedSQL) > 0 {
+// 		if len(orSQL) > 0 {
+// 			combinedSQL = combinedSQL + " OR " + orSQL
+// 		}
+// 	} else {
+// 		combinedSQL = orSQL
+// 	}
 
-	if len(primaryConditions) > 0 {
-		sql = "WHERE " + strings.Join(primaryConditions, " AND ")
-		if len(combinedSQL) > 0 {
-			sql = sql + " AND (" + combinedSQL + ")"
-		}
-	} else if len(combinedSQL) > 0 {
-		sql = "WHERE " + combinedSQL
-	}
-	return
-}
+// 	if len(primaryConditions) > 0 {
+// 		sql = "WHERE " + strings.Join(primaryConditions, " AND ")
+// 		if len(combinedSQL) > 0 {
+// 			sql = sql + " AND (" + combinedSQL + ")"
+// 		}
+// 	} else if len(combinedSQL) > 0 {
+// 		sql = "WHERE " + combinedSQL
+// 	}
+// 	return
+// }
 
 func (scope *Scope) selectSQL() string {
 	if len(scope.Search.selects) == 0 {
@@ -809,36 +810,36 @@ func (scope *Scope) groupSQL() string {
 	return " GROUP BY " + scope.Search.group
 }
 
-func (scope *Scope) havingSQL() string {
-	if len(scope.Search.havingConditions) == 0 {
-		return ""
-	}
+// func (scope *Scope) havingSQL() string {
+// 	if len(scope.Search.havingConditions) == 0 {
+// 		return ""
+// 	}
 
-	var andConditions []string
-	for _, clause := range scope.Search.havingConditions {
-		if sql := scope.buildCondition(clause, true); sql != "" {
-			andConditions = append(andConditions, sql)
-		}
-	}
+// 	var andConditions []string
+// 	for _, clause := range scope.Search.havingConditions {
+// 		if sql := scope.buildCondition(clause, true); sql != "" {
+// 			andConditions = append(andConditions, sql)
+// 		}
+// 	}
 
-	combinedSQL := strings.Join(andConditions, " AND ")
-	if len(combinedSQL) == 0 {
-		return ""
-	}
+// 	combinedSQL := strings.Join(andConditions, " AND ")
+// 	if len(combinedSQL) == 0 {
+// 		return ""
+// 	}
 
-	return " HAVING " + combinedSQL
-}
+// 	return " HAVING " + combinedSQL
+// }
 
-func (scope *Scope) joinsSQL() string {
-	var joinConditions []string
-	for _, clause := range scope.Search.joinConditions {
-		if sql := scope.buildCondition(clause, true); sql != "" {
-			joinConditions = append(joinConditions, strings.TrimSuffix(strings.TrimPrefix(sql, "("), ")"))
-		}
-	}
+// func (scope *Scope) joinsSQL() string {
+// 	var joinConditions []string
+// 	for _, clause := range scope.Search.joinConditions {
+// 		if sql := scope.buildCondition(clause, true); sql != "" {
+// 			joinConditions = append(joinConditions, strings.TrimSuffix(strings.TrimPrefix(sql, "("), ")"))
+// 		}
+// 	}
 
-	return strings.Join(joinConditions, " ") + " "
-}
+// 	return strings.Join(joinConditions, " ") + " "
+// }
 
 func (scope *Scope) prepareQuerySQL() {
 	if scope.Search.raw {
@@ -849,12 +850,12 @@ func (scope *Scope) prepareQuerySQL() {
 	return
 }
 
-func (scope *Scope) inlineCondition(values ...interface{}) *Scope {
-	if len(values) > 0 {
-		scope.Search.Where(values[0], values[1:]...)
-	}
-	return scope
-}
+// func (scope *Scope) inlineCondition(values ...interface{}) *Scope {
+// 	if len(values) > 0 {
+// 		scope.Search.Where(values[0], values[1:]...)
+// 	}
+// 	return scope
+// }
 
 func (scope *Scope) callCallbacks(funcs []*func(s *Scope)) *Scope {
 	defer func() {
@@ -874,64 +875,64 @@ func (scope *Scope) callCallbacks(funcs []*func(s *Scope)) *Scope {
 	return scope
 }
 
-func convertInterfaceToMap(values interface{}, withIgnoredField bool, db *DB) map[string]interface{} {
-	var attrs = map[string]interface{}{}
+// func convertInterfaceToMap(values interface{}, withIgnoredField bool, db *DB) map[string]interface{} {
+// 	var attrs = map[string]interface{}{}
 
-	switch value := values.(type) {
-	case map[string]interface{}:
-		return value
-	case []interface{}:
-		for _, v := range value {
-			for key, value := range convertInterfaceToMap(v, withIgnoredField, db) {
-				attrs[key] = value
-			}
-		}
-	case interface{}:
-		reflectValue := reflect.ValueOf(values)
+// 	switch value := values.(type) {
+// 	case map[string]interface{}:
+// 		return value
+// 	case []interface{}:
+// 		for _, v := range value {
+// 			for key, value := range convertInterfaceToMap(v, withIgnoredField, db) {
+// 				attrs[key] = value
+// 			}
+// 		}
+// 	case interface{}:
+// 		reflectValue := reflect.ValueOf(values)
 
-		switch reflectValue.Kind() {
-		case reflect.Map:
-			for _, key := range reflectValue.MapKeys() {
-				attrs[ToColumnName(key.Interface().(string))] = reflectValue.MapIndex(key).Interface()
-			}
-		default:
-			for _, field := range (&Scope{Value: values, db: db}).Fields() {
-				if !field.IsBlank && (withIgnoredField || !field.IsIgnored) {
-					attrs[field.DBName] = field.Field.Interface()
-				}
-			}
-		}
-	}
-	return attrs
-}
+// 		switch reflectValue.Kind() {
+// 		case reflect.Map:
+// 			for _, key := range reflectValue.MapKeys() {
+// 				attrs[ToColumnName(key.Interface().(string))] = reflectValue.MapIndex(key).Interface()
+// 			}
+// 		default:
+// 			for _, field := range (&Scope{Value: values, db: db}).Fields() {
+// 				if !field.IsBlank && (withIgnoredField || !field.IsIgnored) {
+// 					attrs[field.DBName] = field.Field.Interface()
+// 				}
+// 			}
+// 		}
+// 	}
+// 	return attrs
+// }
 
-func (scope *Scope) updatedAttrsWithValues(value interface{}) (results map[string]interface{}, hasUpdate bool) {
-	if scope.IndirectValue().Kind() != reflect.Struct {
-		return convertInterfaceToMap(value, false, scope.db), true
-	}
+// func (scope *Scope) updatedAttrsWithValues(value interface{}) (results map[string]interface{}, hasUpdate bool) {
+// 	if scope.IndirectValue().Kind() != reflect.Struct {
+// 		return convertInterfaceToMap(value, false, scope.db), true
+// 	}
 
-	results = map[string]interface{}{}
+// 	results = map[string]interface{}{}
 
-	for key, value := range convertInterfaceToMap(value, true, scope.db) {
-		if field, ok := scope.FieldByName(key); ok && scope.changeableField(field) {
-			if _, ok := value.(*SqlExpr); ok {
-				hasUpdate = true
-				results[field.DBName] = value
-			} else {
-				err := field.Set(value)
-				if field.IsNormal && !field.IsIgnored {
-					hasUpdate = true
-					if err == ErrUnaddressable {
-						results[field.DBName] = value
-					} else {
-						results[field.DBName] = field.Field.Interface()
-					}
-				}
-			}
-		}
-	}
-	return
-}
+// 	for key, value := range convertInterfaceToMap(value, true, scope.db) {
+// 		if field, ok := scope.FieldByName(key); ok && scope.changeableField(field) {
+// 			if _, ok := value.(*SqlExpr); ok {
+// 				hasUpdate = true
+// 				results[field.DBName] = value
+// 			} else {
+// 				err := field.Set(value)
+// 				if field.IsNormal && !field.IsIgnored {
+// 					hasUpdate = true
+// 					if err == ErrUnaddressable {
+// 						results[field.DBName] = value
+// 					} else {
+// 						results[field.DBName] = field.Field.Interface()
+// 					}
+// 				}
+// 			}
+// 		}
+// 	}
+// 	return
+// }
 
 func (scope *Scope) row() *sql.Row {
 	defer scope.trace(NowFunc())
@@ -953,14 +954,14 @@ func (scope *Scope) rows() (*sql.Rows, error) {
 	return result.Rows, result.Error
 }
 
-func (scope *Scope) initialize() *Scope {
-	for _, clause := range scope.Search.whereConditions {
-		scope.updatedAttrsWithValues(clause["query"])
-	}
-	scope.updatedAttrsWithValues(scope.Search.initAttrs)
-	scope.updatedAttrsWithValues(scope.Search.assignAttrs)
-	return scope
-}
+// func (scope *Scope) initialize() *Scope {
+// 	for _, clause := range scope.Search.whereConditions {
+// 		scope.updatedAttrsWithValues(clause["query"])
+// 	}
+// 	scope.updatedAttrsWithValues(scope.Search.initAttrs)
+// 	scope.updatedAttrsWithValues(scope.Search.assignAttrs)
+// 	return scope
+// }
 
 func (scope *Scope) isQueryForColumn(query interface{}, column string) bool {
 	queryStr := strings.ToLower(fmt.Sprint(query))
@@ -1067,53 +1068,53 @@ func (scope *Scope) changeableField(field *Field) bool {
 	return true
 }
 
-func (scope *Scope) related(value interface{}, foreignKeys ...string) *Scope {
-	toScope := scope.db.NewScope(value)
-	tx := scope.db.Set("gorm:association:source", scope.Value)
+// func (scope *Scope) related(value interface{}, foreignKeys ...string) *Scope {
+// 	toScope := scope.db.NewScope(value)
+// 	tx := scope.db.Set("gorm:association:source", scope.Value)
 
-	for _, foreignKey := range append(foreignKeys, toScope.typeName()+"Id", scope.typeName()+"Id") {
-		fromField, _ := scope.FieldByName(foreignKey)
-		toField, _ := toScope.FieldByName(foreignKey)
+// 	for _, foreignKey := range append(foreignKeys, toScope.typeName()+"Id", scope.typeName()+"Id") {
+// 		fromField, _ := scope.FieldByName(foreignKey)
+// 		toField, _ := toScope.FieldByName(foreignKey)
 
-		if fromField != nil {
-			if relationship := fromField.Relationship; relationship != nil {
-				if relationship.Kind == "many_to_many" {
-					joinTableHandler := relationship.JoinTableHandler
-					scope.Err(joinTableHandler.JoinWith(joinTableHandler, tx, scope.Value).Find(value).Error)
-				} else if relationship.Kind == "belongs_to" {
-					for idx, foreignKey := range relationship.ForeignDBNames {
-						if field, ok := scope.FieldByName(foreignKey); ok {
-							tx = tx.Where(fmt.Sprintf("%v = ?", scope.Quote(relationship.AssociationForeignDBNames[idx])), field.Field.Interface())
-						}
-					}
-					scope.Err(tx.Find(value).Error)
-				} else if relationship.Kind == "has_many" || relationship.Kind == "has_one" {
-					for idx, foreignKey := range relationship.ForeignDBNames {
-						if field, ok := scope.FieldByName(relationship.AssociationForeignDBNames[idx]); ok {
-							tx = tx.Where(fmt.Sprintf("%v = ?", scope.Quote(foreignKey)), field.Field.Interface())
-						}
-					}
+// 		if fromField != nil {
+// 			if relationship := fromField.Relationship; relationship != nil {
+// 				if relationship.Kind == "many_to_many" {
+// 					joinTableHandler := relationship.JoinTableHandler
+// 					scope.Err(joinTableHandler.JoinWith(joinTableHandler, tx, scope.Value).Find(value).Error)
+// 				} else if relationship.Kind == "belongs_to" {
+// 					for idx, foreignKey := range relationship.ForeignDBNames {
+// 						if field, ok := scope.FieldByName(foreignKey); ok {
+// 							tx = tx.Where(fmt.Sprintf("%v = ?", scope.Quote(relationship.AssociationForeignDBNames[idx])), field.Field.Interface())
+// 						}
+// 					}
+// 					scope.Err(tx.Find(value).Error)
+// 				} else if relationship.Kind == "has_many" || relationship.Kind == "has_one" {
+// 					for idx, foreignKey := range relationship.ForeignDBNames {
+// 						if field, ok := scope.FieldByName(relationship.AssociationForeignDBNames[idx]); ok {
+// 							tx = tx.Where(fmt.Sprintf("%v = ?", scope.Quote(foreignKey)), field.Field.Interface())
+// 						}
+// 					}
 
-					if relationship.PolymorphicType != "" {
-						tx = tx.Where(fmt.Sprintf("%v = ?", scope.Quote(relationship.PolymorphicDBName)), relationship.PolymorphicValue)
-					}
-					scope.Err(tx.Find(value).Error)
-				}
-			} else {
-				sql := fmt.Sprintf("%v = ?", scope.Quote(toScope.PrimaryKey()))
-				scope.Err(tx.Where(sql, fromField.Field.Interface()).Find(value).Error)
-			}
-			return scope
-		} else if toField != nil {
-			sql := fmt.Sprintf("%v = ?", scope.Quote(toField.DBName))
-			scope.Err(tx.Where(sql, scope.PrimaryKeyValue()).Find(value).Error)
-			return scope
-		}
-	}
+// 					if relationship.PolymorphicType != "" {
+// 						tx = tx.Where(fmt.Sprintf("%v = ?", scope.Quote(relationship.PolymorphicDBName)), relationship.PolymorphicValue)
+// 					}
+// 					scope.Err(tx.Find(value).Error)
+// 				}
+// 			} else {
+// 				sql := fmt.Sprintf("%v = ?", scope.Quote(toScope.PrimaryKey()))
+// 				scope.Err(tx.Where(sql, fromField.Field.Interface()).Find(value).Error)
+// 			}
+// 			return scope
+// 		} else if toField != nil {
+// 			sql := fmt.Sprintf("%v = ?", scope.Quote(toField.DBName))
+// 			scope.Err(tx.Where(sql, scope.PrimaryKeyValue()).Find(value).Error)
+// 			return scope
+// 		}
+// 	}
 
-	scope.Err(fmt.Errorf("invalid association %v", foreignKeys))
-	return scope
-}
+// 	scope.Err(fmt.Errorf("invalid association %v", foreignKeys))
+// 	return scope
+// }
 
 // getTableOptions return the table options string or an empty string if the table options does not exist
 func (scope *Scope) getTableOptions() string {
@@ -1124,76 +1125,76 @@ func (scope *Scope) getTableOptions() string {
 	return " " + tableOptions.(string)
 }
 
-func (scope *Scope) createJoinTable(field *StructField) {
-	if relationship := field.Relationship; relationship != nil && relationship.JoinTableHandler != nil {
-		joinTableHandler := relationship.JoinTableHandler
-		joinTable := joinTableHandler.Table(scope.db)
-		if !scope.Dialect().HasTable(joinTable) {
-			toScope := &Scope{Value: reflect.New(field.Struct.Type).Interface()}
+// func (scope *Scope) createJoinTable(field *StructField) {
+// 	if relationship := field.Relationship; relationship != nil && relationship.JoinTableHandler != nil {
+// 		joinTableHandler := relationship.JoinTableHandler
+// 		joinTable := joinTableHandler.Table(scope.db)
+// 		if !scope.Dialect().HasTable(joinTable) {
+// 			toScope := &Scope{Value: reflect.New(field.Struct.Type).Interface()}
 
-			var sqlTypes, primaryKeys []string
-			for idx, fieldName := range relationship.ForeignFieldNames {
-				if field, ok := scope.FieldByName(fieldName); ok {
-					foreignKeyStruct := field.clone()
-					foreignKeyStruct.IsPrimaryKey = false
-					foreignKeyStruct.TagSettingsSet("IS_JOINTABLE_FOREIGNKEY", "true")
-					foreignKeyStruct.TagSettingsDelete("AUTO_INCREMENT")
-					sqlTypes = append(sqlTypes, scope.Quote(relationship.ForeignDBNames[idx])+" "+scope.Dialect().DataTypeOf(foreignKeyStruct))
-					primaryKeys = append(primaryKeys, scope.Quote(relationship.ForeignDBNames[idx]))
-				}
-			}
+// 			var sqlTypes, primaryKeys []string
+// 			for idx, fieldName := range relationship.ForeignFieldNames {
+// 				if field, ok := scope.FieldByName(fieldName); ok {
+// 					foreignKeyStruct := field.clone()
+// 					foreignKeyStruct.IsPrimaryKey = false
+// 					foreignKeyStruct.TagSettingsSet("IS_JOINTABLE_FOREIGNKEY", "true")
+// 					foreignKeyStruct.TagSettingsDelete("AUTO_INCREMENT")
+// 					sqlTypes = append(sqlTypes, scope.Quote(relationship.ForeignDBNames[idx])+" "+scope.Dialect().DataTypeOf(foreignKeyStruct))
+// 					primaryKeys = append(primaryKeys, scope.Quote(relationship.ForeignDBNames[idx]))
+// 				}
+// 			}
 
-			for idx, fieldName := range relationship.AssociationForeignFieldNames {
-				if field, ok := toScope.FieldByName(fieldName); ok {
-					foreignKeyStruct := field.clone()
-					foreignKeyStruct.IsPrimaryKey = false
-					foreignKeyStruct.TagSettingsSet("IS_JOINTABLE_FOREIGNKEY", "true")
-					foreignKeyStruct.TagSettingsDelete("AUTO_INCREMENT")
-					sqlTypes = append(sqlTypes, scope.Quote(relationship.AssociationForeignDBNames[idx])+" "+scope.Dialect().DataTypeOf(foreignKeyStruct))
-					primaryKeys = append(primaryKeys, scope.Quote(relationship.AssociationForeignDBNames[idx]))
-				}
-			}
+// 			for idx, fieldName := range relationship.AssociationForeignFieldNames {
+// 				if field, ok := toScope.FieldByName(fieldName); ok {
+// 					foreignKeyStruct := field.clone()
+// 					foreignKeyStruct.IsPrimaryKey = false
+// 					foreignKeyStruct.TagSettingsSet("IS_JOINTABLE_FOREIGNKEY", "true")
+// 					foreignKeyStruct.TagSettingsDelete("AUTO_INCREMENT")
+// 					sqlTypes = append(sqlTypes, scope.Quote(relationship.AssociationForeignDBNames[idx])+" "+scope.Dialect().DataTypeOf(foreignKeyStruct))
+// 					primaryKeys = append(primaryKeys, scope.Quote(relationship.AssociationForeignDBNames[idx]))
+// 				}
+// 			}
 
-			scope.Err(scope.NewDB().Exec(fmt.Sprintf("CREATE TABLE %v (%v, PRIMARY KEY (%v))%s", scope.Quote(joinTable), strings.Join(sqlTypes, ","), strings.Join(primaryKeys, ","), scope.getTableOptions())).Error)
-		}
-		scope.NewDB().Table(joinTable).AutoMigrate(joinTableHandler)
-	}
-}
+// 			scope.Err(scope.NewDB().Exec(fmt.Sprintf("CREATE TABLE %v (%v, PRIMARY KEY (%v))%s", scope.Quote(joinTable), strings.Join(sqlTypes, ","), strings.Join(primaryKeys, ","), scope.getTableOptions())).Error)
+// 		}
+// 		scope.NewDB().Table(joinTable).AutoMigrate(joinTableHandler)
+// 	}
+// }
 
-func (scope *Scope) createTable() *Scope {
-	var tags []string
-	var primaryKeys []string
-	var primaryKeyInColumnType = false
-	for _, field := range scope.GetModelStruct().StructFields {
-		if field.IsNormal {
-			sqlTag := scope.Dialect().DataTypeOf(field)
+// func (scope *Scope) createTable() *Scope {
+	// var tags []string
+	// var primaryKeys []string
+	// var primaryKeyInColumnType = false
+	// for _, field := range scope.GetModelStruct().StructFields {
+	// 	if field.IsNormal {
+	// 		sqlTag := scope.Dialect().DataTypeOf(field)
 
-			// Check if the primary key constraint was specified as
-			// part of the column type. If so, we can only support
-			// one column as the primary key.
-			if strings.Contains(strings.ToLower(sqlTag), "primary key") {
-				primaryKeyInColumnType = true
-			}
+	// 		// Check if the primary key constraint was specified as
+	// 		// part of the column type. If so, we can only support
+	// 		// one column as the primary key.
+	// 		if strings.Contains(strings.ToLower(sqlTag), "primary key") {
+	// 			primaryKeyInColumnType = true
+	// 		}
 
-			tags = append(tags, scope.Quote(field.DBName)+" "+sqlTag)
-		}
+	// 		tags = append(tags, scope.Quote(field.DBName)+" "+sqlTag)
+	// 	}
 
-		if field.IsPrimaryKey {
-			primaryKeys = append(primaryKeys, scope.Quote(field.DBName))
-		}
-		scope.createJoinTable(field)
-	}
+	// 	if field.IsPrimaryKey {
+	// 		primaryKeys = append(primaryKeys, scope.Quote(field.DBName))
+	// 	}
+	// 	scope.createJoinTable(field)
+	// }
 
-	var primaryKeyStr string
-	if len(primaryKeys) > 0 && !primaryKeyInColumnType {
-		primaryKeyStr = fmt.Sprintf(", PRIMARY KEY (%v)", strings.Join(primaryKeys, ","))
-	}
+	// var primaryKeyStr string
+	// if len(primaryKeys) > 0 && !primaryKeyInColumnType {
+	// 	primaryKeyStr = fmt.Sprintf(", PRIMARY KEY (%v)", strings.Join(primaryKeys, ","))
+	// }
 
-	scope.Raw(fmt.Sprintf("CREATE TABLE %v (%v %v)%s", scope.QuotedTableName(), strings.Join(tags, ","), primaryKeyStr, scope.getTableOptions())).Exec()
+	// scope.Raw(fmt.Sprintf("CREATE TABLE %v (%v %v)%s", scope.QuotedTableName(), strings.Join(tags, ","), primaryKeyStr, scope.getTableOptions())).Exec()
 
-	scope.autoIndex()
-	return scope
-}
+	// scope.autoIndex()
+	// return scope
+// }
 
 func (scope *Scope) dropTable() *Scope {
 	scope.Raw(fmt.Sprintf("DROP TABLE %v", scope.QuotedTableName())).Exec()
@@ -1208,23 +1209,23 @@ func (scope *Scope) dropColumn(column string) {
 	scope.Raw(fmt.Sprintf("ALTER TABLE %v DROP COLUMN %v", scope.QuotedTableName(), scope.Quote(column))).Exec()
 }
 
-func (scope *Scope) addIndex(unique bool, indexName string, column ...string) {
-	if scope.Dialect().HasIndex(scope.TableName(), indexName) {
-		return
-	}
+// func (scope *Scope) addIndex(unique bool, indexName string, column ...string) {
+// 	if scope.Dialect().HasIndex(scope.TableName(), indexName) {
+// 		return
+// 	}
 
-	var columns []string
-	for _, name := range column {
-		columns = append(columns, scope.quoteIfPossible(name))
-	}
+// 	var columns []string
+// 	for _, name := range column {
+// 		columns = append(columns, scope.quoteIfPossible(name))
+// 	}
 
-	sqlCreate := "CREATE INDEX"
-	if unique {
-		sqlCreate = "CREATE UNIQUE INDEX"
-	}
+// 	sqlCreate := "CREATE INDEX"
+// 	if unique {
+// 		sqlCreate = "CREATE UNIQUE INDEX"
+// 	}
 
-	scope.Raw(fmt.Sprintf("%s %v ON %v(%v) %v", sqlCreate, indexName, scope.QuotedTableName(), strings.Join(columns, ", "), scope.whereSQL())).Exec()
-}
+// 	scope.Raw(fmt.Sprintf("%s %v ON %v(%v) %v", sqlCreate, indexName, scope.QuotedTableName(), strings.Join(columns, ", "), scope.whereSQL())).Exec()
+// }
 
 func (scope *Scope) addForeignKey(field string, dest string, onDelete string, onUpdate string) {
 	// Compatible with old generated key
@@ -1257,68 +1258,68 @@ func (scope *Scope) removeIndex(indexName string) {
 	scope.Dialect().RemoveIndex(scope.TableName(), indexName)
 }
 
-func (scope *Scope) autoMigrate() *Scope {
-	tableName := scope.TableName()
-	quotedTableName := scope.QuotedTableName()
+// func (scope *Scope) autoMigrate() *Scope {
+	// tableName := scope.TableName()
+	// quotedTableName := scope.QuotedTableName()
 
-	if !scope.Dialect().HasTable(tableName) {
-		scope.createTable()
-	} else {
-		for _, field := range scope.GetModelStruct().StructFields {
-			if !scope.Dialect().HasColumn(tableName, field.DBName) {
-				if field.IsNormal {
-					sqlTag := scope.Dialect().DataTypeOf(field)
-					scope.Raw(fmt.Sprintf("ALTER TABLE %v ADD %v %v;", quotedTableName, scope.Quote(field.DBName), sqlTag)).Exec()
-				}
-			}
-			scope.createJoinTable(field)
-		}
-		scope.autoIndex()
-	}
-	return scope
-}
+	// if !scope.Dialect().HasTable(tableName) {
+	// 	scope.createTable()
+	// } else {
+	// 	for _, field := range scope.GetModelStruct().StructFields {
+	// 		if !scope.Dialect().HasColumn(tableName, field.DBName) {
+	// 			if field.IsNormal {
+	// 				sqlTag := scope.Dialect().DataTypeOf(field)
+	// 				scope.Raw(fmt.Sprintf("ALTER TABLE %v ADD %v %v;", quotedTableName, scope.Quote(field.DBName), sqlTag)).Exec()
+	// 			}
+	// 		}
+	// 		scope.createJoinTable(field)
+	// 	}
+	// 	scope.autoIndex()
+	// }
+	// return scope
+// }
 
 func (scope *Scope) autoIndex() *Scope {
-	var indexes = map[string][]string{}
-	var uniqueIndexes = map[string][]string{}
+	// var indexes = map[string][]string{}
+	// var uniqueIndexes = map[string][]string{}
 
-	for _, field := range scope.GetStructFields() {
-		if name, ok := field.TagSettingsGet("INDEX"); ok {
-			names := strings.Split(name, ",")
+	// for _, field := range scope.GetStructFields() {
+	// 	if name, ok := field.TagSettingsGet("INDEX"); ok {
+	// 		names := strings.Split(name, ",")
 
-			for _, name := range names {
-				if name == "INDEX" || name == "" {
-					name = scope.Dialect().BuildKeyName("idx", scope.TableName(), field.DBName)
-				}
-				name, column := scope.Dialect().NormalizeIndexAndColumn(name, field.DBName)
-				indexes[name] = append(indexes[name], column)
-			}
-		}
+	// 		for _, name := range names {
+	// 			if name == "INDEX" || name == "" {
+	// 				name = scope.Dialect().BuildKeyName("idx", scope.TableName(), field.DBName)
+	// 			}
+	// 			name, column := scope.Dialect().NormalizeIndexAndColumn(name, field.DBName)
+	// 			indexes[name] = append(indexes[name], column)
+	// 		}
+	// 	}
 
-		if name, ok := field.TagSettingsGet("UNIQUE_INDEX"); ok {
-			names := strings.Split(name, ",")
+	// 	if name, ok := field.TagSettingsGet("UNIQUE_INDEX"); ok {
+	// 		names := strings.Split(name, ",")
 
-			for _, name := range names {
-				if name == "UNIQUE_INDEX" || name == "" {
-					name = scope.Dialect().BuildKeyName("uix", scope.TableName(), field.DBName)
-				}
-				name, column := scope.Dialect().NormalizeIndexAndColumn(name, field.DBName)
-				uniqueIndexes[name] = append(uniqueIndexes[name], column)
-			}
-		}
-	}
+	// 		for _, name := range names {
+	// 			if name == "UNIQUE_INDEX" || name == "" {
+	// 				name = scope.Dialect().BuildKeyName("uix", scope.TableName(), field.DBName)
+	// 			}
+	// 			name, column := scope.Dialect().NormalizeIndexAndColumn(name, field.DBName)
+	// 			uniqueIndexes[name] = append(uniqueIndexes[name], column)
+	// 		}
+	// 	}
+	// }
 
-	for name, columns := range indexes {
-		if db := scope.NewDB().Table(scope.TableName()).Model(scope.Value).AddIndex(name, columns...); db.Error != nil {
-			scope.db.AddError(db.Error)
-		}
-	}
+	// for name, columns := range indexes {
+	// 	if db := scope.NewDB().Table(scope.TableName()).Model(scope.Value).AddIndex(name, columns...); db.Error != nil {
+	// 		scope.db.AddError(db.Error)
+	// 	}
+	// }
 
-	for name, columns := range uniqueIndexes {
-		if db := scope.NewDB().Table(scope.TableName()).Model(scope.Value).AddUniqueIndex(name, columns...); db.Error != nil {
-			scope.db.AddError(db.Error)
-		}
-	}
+	// for name, columns := range uniqueIndexes {
+	// 	if db := scope.NewDB().Table(scope.TableName()).Model(scope.Value).AddUniqueIndex(name, columns...); db.Error != nil {
+	// 		scope.db.AddError(db.Error)
+	// 	}
+	// }
 
 	return scope
 }
@@ -1374,48 +1375,48 @@ func (scope *Scope) getColumnAsArray(columns []string, values ...interface{}) (r
 	return
 }
 
-func (scope *Scope) getColumnAsScope(column string) *Scope {
-	indirectScopeValue := scope.IndirectValue()
+// func (scope *Scope) getColumnAsScope(column string) *Scope {
+// 	indirectScopeValue := scope.IndirectValue()
 
-	switch indirectScopeValue.Kind() {
-	case reflect.Slice:
-		if fieldStruct, ok := scope.GetModelStruct().ModelType.FieldByName(column); ok {
-			fieldType := fieldStruct.Type
-			if fieldType.Kind() == reflect.Slice || fieldType.Kind() == reflect.Ptr {
-				fieldType = fieldType.Elem()
-			}
+// 	switch indirectScopeValue.Kind() {
+// 	case reflect.Slice:
+// 		if fieldStruct, ok := scope.GetModelStruct().ModelType.FieldByName(column); ok {
+// 			fieldType := fieldStruct.Type
+// 			if fieldType.Kind() == reflect.Slice || fieldType.Kind() == reflect.Ptr {
+// 				fieldType = fieldType.Elem()
+// 			}
 
-			resultsMap := map[interface{}]bool{}
-			results := reflect.New(reflect.SliceOf(reflect.PtrTo(fieldType))).Elem()
+// 			resultsMap := map[interface{}]bool{}
+// 			results := reflect.New(reflect.SliceOf(reflect.PtrTo(fieldType))).Elem()
 
-			for i := 0; i < indirectScopeValue.Len(); i++ {
-				result := indirect(indirect(indirectScopeValue.Index(i)).FieldByName(column))
+// 			for i := 0; i < indirectScopeValue.Len(); i++ {
+// 				result := indirect(indirect(indirectScopeValue.Index(i)).FieldByName(column))
 
-				if result.Kind() == reflect.Slice {
-					for j := 0; j < result.Len(); j++ {
-						if elem := result.Index(j); elem.CanAddr() && resultsMap[elem.Addr()] != true {
-							resultsMap[elem.Addr()] = true
-							results = reflect.Append(results, elem.Addr())
-						}
-					}
-				} else if result.CanAddr() && resultsMap[result.Addr()] != true {
-					resultsMap[result.Addr()] = true
-					results = reflect.Append(results, result.Addr())
-				}
-			}
-			return scope.New(results.Interface())
-		}
-	case reflect.Struct:
-		if field := indirectScopeValue.FieldByName(column); field.CanAddr() {
-			return scope.New(field.Addr().Interface())
-		}
-	}
-	return nil
-}
+// 				if result.Kind() == reflect.Slice {
+// 					for j := 0; j < result.Len(); j++ {
+// 						if elem := result.Index(j); elem.CanAddr() && resultsMap[elem.Addr()] != true {
+// 							resultsMap[elem.Addr()] = true
+// 							results = reflect.Append(results, elem.Addr())
+// 						}
+// 					}
+// 				} else if result.CanAddr() && resultsMap[result.Addr()] != true {
+// 					resultsMap[result.Addr()] = true
+// 					results = reflect.Append(results, result.Addr())
+// 				}
+// 			}
+// 			return scope.New(results.Interface())
+// 		}
+// 	case reflect.Struct:
+// 		if field := indirectScopeValue.FieldByName(column); field.CanAddr() {
+// 			return scope.New(field.Addr().Interface())
+// 		}
+// 	}
+// 	return nil
+// }
 
-func (scope *Scope) hasConditions() bool {
-	return !scope.PrimaryKeyZero() ||
-		len(scope.Search.whereConditions) > 0 ||
-		len(scope.Search.orConditions) > 0 ||
-		len(scope.Search.notConditions) > 0
-}
+// func (scope *Scope) hasConditions() bool {
+// 	return !scope.PrimaryKeyZero() ||
+// 		len(scope.Search.whereConditions) > 0 ||
+// 		len(scope.Search.orConditions) > 0 ||
+// 		len(scope.Search.notConditions) > 0
+// }

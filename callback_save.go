@@ -1,7 +1,7 @@
 package gorm
 
 import (
-	"reflect"
+	// "reflect"
 	"strings"
 )
 
@@ -64,107 +64,107 @@ func saveAssociationCheck(scope *Scope, field *Field) (autoUpdate bool, autoCrea
 	return
 }
 
-func saveBeforeAssociationsCallback(scope *Scope) {
-	for _, field := range scope.Fields() {
-		autoUpdate, autoCreate, saveReference, relationship := saveAssociationCheck(scope, field)
+// func saveBeforeAssociationsCallback(scope *Scope) {
+// 	for _, field := range scope.Fields() {
+// 		autoUpdate, autoCreate, saveReference, relationship := saveAssociationCheck(scope, field)
 
-		if relationship != nil && relationship.Kind == "belongs_to" {
-			fieldValue := field.Field.Addr().Interface()
-			newScope := scope.New(fieldValue)
+// 		if relationship != nil && relationship.Kind == "belongs_to" {
+// 			fieldValue := field.Field.Addr().Interface()
+// 			newScope := scope.New(fieldValue)
 
-			if newScope.PrimaryKeyZero() {
-				if autoCreate {
-					scope.Err(scope.NewDB().Save(fieldValue).Error)
-				}
-			} else if autoUpdate {
-				scope.Err(scope.NewDB().Save(fieldValue).Error)
-			}
+// 			if newScope.PrimaryKeyZero() {
+// 				if autoCreate {
+// 					scope.Err(scope.NewDB().Save(fieldValue).Error)
+// 				}
+// 			} else if autoUpdate {
+// 				scope.Err(scope.NewDB().Save(fieldValue).Error)
+// 			}
 
-			if saveReference {
-				if len(relationship.ForeignFieldNames) != 0 {
-					// set value's foreign key
-					for idx, fieldName := range relationship.ForeignFieldNames {
-						associationForeignName := relationship.AssociationForeignDBNames[idx]
-						if foreignField, ok := scope.New(fieldValue).FieldByName(associationForeignName); ok {
-							scope.Err(scope.SetColumn(fieldName, foreignField.Field.Interface()))
-						}
-					}
-				}
-			}
-		}
-	}
-}
+// 			if saveReference {
+// 				if len(relationship.ForeignFieldNames) != 0 {
+// 					// set value's foreign key
+// 					for idx, fieldName := range relationship.ForeignFieldNames {
+// 						associationForeignName := relationship.AssociationForeignDBNames[idx]
+// 						if foreignField, ok := scope.New(fieldValue).FieldByName(associationForeignName); ok {
+// 							scope.Err(scope.SetColumn(fieldName, foreignField.Field.Interface()))
+// 						}
+// 					}
+// 				}
+// 			}
+// 		}
+// 	}
+// }
 
-func saveAfterAssociationsCallback(scope *Scope) {
-	for _, field := range scope.Fields() {
-		autoUpdate, autoCreate, saveReference, relationship := saveAssociationCheck(scope, field)
+// func saveAfterAssociationsCallback(scope *Scope) {
+// 	for _, field := range scope.Fields() {
+// 		autoUpdate, autoCreate, saveReference, relationship := saveAssociationCheck(scope, field)
 
-		if relationship != nil && (relationship.Kind == "has_one" || relationship.Kind == "has_many" || relationship.Kind == "many_to_many") {
-			value := field.Field
+// 		if relationship != nil && (relationship.Kind == "has_one" || relationship.Kind == "has_many" || relationship.Kind == "many_to_many") {
+// 			value := field.Field
 
-			switch value.Kind() {
-			case reflect.Slice:
-				for i := 0; i < value.Len(); i++ {
-					newDB := scope.NewDB()
-					elem := value.Index(i).Addr().Interface()
-					newScope := newDB.NewScope(elem)
+// 			switch value.Kind() {
+// 			case reflect.Slice:
+// 				for i := 0; i < value.Len(); i++ {
+// 					newDB := scope.NewDB()
+// 					elem := value.Index(i).Addr().Interface()
+// 					newScope := newDB.NewScope(elem)
 
-					if saveReference {
-						if relationship.JoinTableHandler == nil && len(relationship.ForeignFieldNames) != 0 {
-							for idx, fieldName := range relationship.ForeignFieldNames {
-								associationForeignName := relationship.AssociationForeignDBNames[idx]
-								if f, ok := scope.FieldByName(associationForeignName); ok {
-									scope.Err(newScope.SetColumn(fieldName, f.Field.Interface()))
-								}
-							}
-						}
+// 					if saveReference {
+// 						if relationship.JoinTableHandler == nil && len(relationship.ForeignFieldNames) != 0 {
+// 							for idx, fieldName := range relationship.ForeignFieldNames {
+// 								associationForeignName := relationship.AssociationForeignDBNames[idx]
+// 								if f, ok := scope.FieldByName(associationForeignName); ok {
+// 									scope.Err(newScope.SetColumn(fieldName, f.Field.Interface()))
+// 								}
+// 							}
+// 						}
 
-						if relationship.PolymorphicType != "" {
-							scope.Err(newScope.SetColumn(relationship.PolymorphicType, relationship.PolymorphicValue))
-						}
-					}
+// 						if relationship.PolymorphicType != "" {
+// 							scope.Err(newScope.SetColumn(relationship.PolymorphicType, relationship.PolymorphicValue))
+// 						}
+// 					}
 
-					if newScope.PrimaryKeyZero() {
-						if autoCreate {
-							scope.Err(newDB.Save(elem).Error)
-						}
-					} else if autoUpdate {
-						scope.Err(newDB.Save(elem).Error)
-					}
+// 					if newScope.PrimaryKeyZero() {
+// 						if autoCreate {
+// 							scope.Err(newDB.Save(elem).Error)
+// 						}
+// 					} else if autoUpdate {
+// 						scope.Err(newDB.Save(elem).Error)
+// 					}
 
-					if !scope.New(newScope.Value).PrimaryKeyZero() && saveReference {
-						if joinTableHandler := relationship.JoinTableHandler; joinTableHandler != nil {
-							scope.Err(joinTableHandler.Add(joinTableHandler, newDB, scope.Value, newScope.Value))
-						}
-					}
-				}
-			default:
-				elem := value.Addr().Interface()
-				newScope := scope.New(elem)
+// 					if !scope.New(newScope.Value).PrimaryKeyZero() && saveReference {
+// 						if joinTableHandler := relationship.JoinTableHandler; joinTableHandler != nil {
+// 							scope.Err(joinTableHandler.Add(joinTableHandler, newDB, scope.Value, newScope.Value))
+// 						}
+// 					}
+// 				}
+// 			default:
+// 				elem := value.Addr().Interface()
+// 				newScope := scope.New(elem)
 
-				if saveReference {
-					if len(relationship.ForeignFieldNames) != 0 {
-						for idx, fieldName := range relationship.ForeignFieldNames {
-							associationForeignName := relationship.AssociationForeignDBNames[idx]
-							if f, ok := scope.FieldByName(associationForeignName); ok {
-								scope.Err(newScope.SetColumn(fieldName, f.Field.Interface()))
-							}
-						}
-					}
+// 				if saveReference {
+// 					if len(relationship.ForeignFieldNames) != 0 {
+// 						for idx, fieldName := range relationship.ForeignFieldNames {
+// 							associationForeignName := relationship.AssociationForeignDBNames[idx]
+// 							if f, ok := scope.FieldByName(associationForeignName); ok {
+// 								scope.Err(newScope.SetColumn(fieldName, f.Field.Interface()))
+// 							}
+// 						}
+// 					}
 
-					if relationship.PolymorphicType != "" {
-						scope.Err(newScope.SetColumn(relationship.PolymorphicType, relationship.PolymorphicValue))
-					}
-				}
+// 					if relationship.PolymorphicType != "" {
+// 						scope.Err(newScope.SetColumn(relationship.PolymorphicType, relationship.PolymorphicValue))
+// 					}
+// 				}
 
-				if newScope.PrimaryKeyZero() {
-					if autoCreate {
-						scope.Err(scope.NewDB().Save(elem).Error)
-					}
-				} else if autoUpdate {
-					scope.Err(scope.NewDB().Save(elem).Error)
-				}
-			}
-		}
-	}
-}
+// 				if newScope.PrimaryKeyZero() {
+// 					if autoCreate {
+// 						scope.Err(scope.NewDB().Save(elem).Error)
+// 					}
+// 				} else if autoUpdate {
+// 					scope.Err(scope.NewDB().Save(elem).Error)
+// 				}
+// 			}
+// 		}
+// 	}
+// }

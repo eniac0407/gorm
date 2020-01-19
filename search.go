@@ -36,41 +36,41 @@ func (s *search) clone() *search {
 	return &clone
 }
 
-func (s *search) Where(query interface{}, values ...interface{}) *search {
-	s.whereConditions = append(s.whereConditions, map[string]interface{}{"query": query, "args": values})
-	return s
-}
+// func (s *search) Where(query interface{}, values ...interface{}) *search {
+// 	s.whereConditions = append(s.whereConditions, map[string]interface{}{"query": query, "args": values})
+// 	return s
+// }
 
-func (s *search) Not(query interface{}, values ...interface{}) *search {
-	s.notConditions = append(s.notConditions, map[string]interface{}{"query": query, "args": values})
-	return s
-}
+// func (s *search) Not(query interface{}, values ...interface{}) *search {
+// 	s.notConditions = append(s.notConditions, map[string]interface{}{"query": query, "args": values})
+// 	return s
+// }
 
-func (s *search) Or(query interface{}, values ...interface{}) *search {
-	s.orConditions = append(s.orConditions, map[string]interface{}{"query": query, "args": values})
-	return s
-}
+// func (s *search) Or(query interface{}, values ...interface{}) *search {
+// 	s.orConditions = append(s.orConditions, map[string]interface{}{"query": query, "args": values})
+// 	return s
+// }
 
-func (s *search) Attrs(attrs ...interface{}) *search {
-	s.initAttrs = append(s.initAttrs, toSearchableMap(attrs...))
-	return s
-}
+// func (s *search) Attrs(attrs ...interface{}) *search {
+// 	s.initAttrs = append(s.initAttrs, toSearchableMap(attrs...))
+// 	return s
+// }
 
-func (s *search) Assign(attrs ...interface{}) *search {
-	s.assignAttrs = append(s.assignAttrs, toSearchableMap(attrs...))
-	return s
-}
+// func (s *search) Assign(attrs ...interface{}) *search {
+// 	s.assignAttrs = append(s.assignAttrs, toSearchableMap(attrs...))
+// 	return s
+// }
 
-func (s *search) Order(value interface{}, reorder ...bool) *search {
-	if len(reorder) > 0 && reorder[0] {
-		s.orders = []interface{}{}
-	}
+// func (s *search) Order(value interface{}, reorder ...bool) *search {
+// 	if len(reorder) > 0 && reorder[0] {
+// 		s.orders = []interface{}{}
+// 	}
 
-	if value != nil && value != "" {
-		s.orders = append(s.orders, value)
-	}
-	return s
-}
+// 	if value != nil && value != "" {
+// 		s.orders = append(s.orders, value)
+// 	}
+// 	return s
+// }
 
 func (s *search) Select(query interface{}, args ...interface{}) *search {
 	s.selects = map[string]interface{}{"query": query, "args": args}
@@ -82,34 +82,34 @@ func (s *search) Omit(columns ...string) *search {
 	return s
 }
 
-func (s *search) Limit(limit interface{}) *search {
-	s.limit = limit
-	return s
-}
+// func (s *search) Limit(limit interface{}) *search {
+// 	s.limit = limit
+// 	return s
+// }
 
-func (s *search) Offset(offset interface{}) *search {
-	s.offset = offset
-	return s
-}
+// func (s *search) Offset(offset interface{}) *search {
+// 	s.offset = offset
+// 	return s
+// }
 
-func (s *search) Group(query string) *search {
-	s.group = s.getInterfaceAsSQL(query)
-	return s
-}
+// func (s *search) Group(query string) *search {
+// 	s.group = s.getInterfaceAsSQL(query)
+// 	return s
+// }
 
-func (s *search) Having(query interface{}, values ...interface{}) *search {
-	if val, ok := query.(*SqlExpr); ok {
-		s.havingConditions = append(s.havingConditions, map[string]interface{}{"query": val.expr, "args": val.args})
-	} else {
-		s.havingConditions = append(s.havingConditions, map[string]interface{}{"query": query, "args": values})
-	}
-	return s
-}
+// func (s *search) Having(query interface{}, values ...interface{}) *search {
+// 	if val, ok := query.(*SqlExpr); ok {
+// 		s.havingConditions = append(s.havingConditions, map[string]interface{}{"query": val.expr, "args": val.args})
+// 	} else {
+// 		s.havingConditions = append(s.havingConditions, map[string]interface{}{"query": query, "args": values})
+// 	}
+// 	return s
+// }
 
-func (s *search) Joins(query string, values ...interface{}) *search {
-	s.joinConditions = append(s.joinConditions, map[string]interface{}{"query": query, "args": values})
-	return s
-}
+// func (s *search) Joins(query string, values ...interface{}) *search {
+// 	s.joinConditions = append(s.joinConditions, map[string]interface{}{"query": query, "args": values})
+// 	return s
+// }
 
 func (s *search) Preload(schema string, values ...interface{}) *search {
 	var preloads []searchPreload
