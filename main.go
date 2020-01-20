@@ -265,8 +265,8 @@ func (s *DB) SubQuery() *SqlExpr {
 
 // Select specify fields that you want to retrieve from database when querying, by default, will select all fields;
 // When creating/updating, specify fields that you want to save to database
-func (s *DB) Select(query interface{}, args ...interface{}) *DB {
-	return s.clone().search.Select(query, args...).db
+func (s *DB) Select(query interface{}, out interface{}, args ...interface{}) *DB {
+	return s.clone().search.Select(query, args...).db.NewScope(out).callCallbacks(s.parent.callbacks.queries).db
 }
 
 // Omit specify fields that you want to ignore when saving to database for creating, updating
@@ -466,15 +466,15 @@ func (s *DB) UpdateColumns(values interface{}) *DB {
 
 // Save update value in database, if the value doesn't have primary key, will insert it
 // func (s *DB) Save(value interface{}) *DB {
-	// scope := s.NewScope(value)
-	// if !scope.PrimaryKeyZero() {
-	// 	newDB := scope.callCallbacks(s.parent.callbacks.updates).db
-	// 	if newDB.Error == nil && newDB.RowsAffected == 0 {
-	// 		return s.New().Table(scope.TableName()).FirstOrCreate(value)
-	// 	}
-	// 	return newDB
-	// }
-	// return scope.callCallbacks(s.parent.callbacks.creates).db
+// scope := s.NewScope(value)
+// if !scope.PrimaryKeyZero() {
+// 	newDB := scope.callCallbacks(s.parent.callbacks.updates).db
+// 	if newDB.Error == nil && newDB.RowsAffected == 0 {
+// 		return s.New().Table(scope.TableName()).FirstOrCreate(value)
+// 	}
+// 	return newDB
+// }
+// return scope.callCallbacks(s.parent.callbacks.creates).db
 // }
 
 // Create insert the value into database
