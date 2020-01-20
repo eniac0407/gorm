@@ -10,6 +10,7 @@ import (
 	"regexp"
 	"strings"
 	"time"
+	// "log"
 )
 
 // Scope contain current operation's information when you perform any operation on the database
@@ -103,82 +104,82 @@ func (scope *Scope) SkipLeft() {
 }
 
 // Fields get value's fields
-// func (scope *Scope) Fields() []*Field {
-// 	if scope.fields == nil {
-// 		var (
-// 			fields             []*Field
-// 			indirectScopeValue = scope.IndirectValue()
-// 			isStruct           = indirectScopeValue.Kind() == reflect.Struct
-// 		)
+func (scope *Scope) Fields() []*Field {
+	if scope.fields == nil {
+		var (
+			fields             []*Field
+			indirectScopeValue = scope.IndirectValue()
+			isStruct           = indirectScopeValue.Kind() == reflect.Struct
+		)
 
-// 		for _, structField := range scope.GetModelStruct().StructFields {
-// 			if isStruct {
-// 				fieldValue := indirectScopeValue
-// 				for _, name := range structField.Names {
-// 					if fieldValue.Kind() == reflect.Ptr && fieldValue.IsNil() {
-// 						fieldValue.Set(reflect.New(fieldValue.Type().Elem()))
-// 					}
-// 					fieldValue = reflect.Indirect(fieldValue).FieldByName(name)
-// 				}
-// 				fields = append(fields, &Field{StructField: structField, Field: fieldValue, IsBlank: isBlank(fieldValue)})
-// 			} else {
-// 				fields = append(fields, &Field{StructField: structField, IsBlank: true})
-// 			}
-// 		}
-// 		scope.fields = &fields
-// 	}
+		for _, structField := range scope.GetModelStruct().StructFields {
+			if isStruct {
+				fieldValue := indirectScopeValue
+				for _, name := range structField.Names {
+					if fieldValue.Kind() == reflect.Ptr && fieldValue.IsNil() {
+						fieldValue.Set(reflect.New(fieldValue.Type().Elem()))
+					}
+					fieldValue = reflect.Indirect(fieldValue).FieldByName(name)
+				}
+				fields = append(fields, &Field{StructField: structField, Field: fieldValue, IsBlank: isBlank(fieldValue)})
+			} else {
+				fields = append(fields, &Field{StructField: structField, IsBlank: true})
+			}
+		}
+		scope.fields = &fields
+	}
 
-// 	return *scope.fields
-// }
+	return *scope.fields
+}
 
 // FieldByName find `gorm.Field` with field name or db name
-// func (scope *Scope) FieldByName(name string) (field *Field, ok bool) {
-// 	var (
-// 		dbName           = ToColumnName(name)
-// 		mostMatchedField *Field
-// 	)
+func (scope *Scope) FieldByName(name string) (field *Field, ok bool) {
+	var (
+		dbName           = ToColumnName(name)
+		mostMatchedField *Field
+	)
 
-// 	for _, field := range scope.Fields() {
-// 		if field.Name == name || field.DBName == name {
-// 			return field, true
-// 		}
-// 		if field.DBName == dbName {
-// 			mostMatchedField = field
-// 		}
-// 	}
-// 	return mostMatchedField, mostMatchedField != nil
-// }
+	for _, field := range scope.Fields() {
+		if field.Name == name || field.DBName == name {
+			return field, true
+		}
+		if field.DBName == dbName {
+			mostMatchedField = field
+		}
+	}
+	return mostMatchedField, mostMatchedField != nil
+}
 
 // PrimaryFields return scope's primary fields
-// func (scope *Scope) PrimaryFields() (fields []*Field) {
-// 	for _, field := range scope.Fields() {
-// 		if field.IsPrimaryKey {
-// 			fields = append(fields, field)
-// 		}
-// 	}
-// 	return fields
-// }
+func (scope *Scope) PrimaryFields() (fields []*Field) {
+	for _, field := range scope.Fields() {
+		if field.IsPrimaryKey {
+			fields = append(fields, field)
+		}
+	}
+	return fields
+}
 
 // PrimaryField return scope's main primary field, if defined more that one primary fields, will return the one having column name `id` or the first one
-// func (scope *Scope) PrimaryField() *Field {
-// 	if primaryFields := scope.GetModelStruct().PrimaryFields; len(primaryFields) > 0 {
-// 		if len(primaryFields) > 1 {
-// 			if field, ok := scope.FieldByName("id"); ok {
-// 				return field
-// 			}
-// 		}
-// 		return scope.PrimaryFields()[0]
-// 	}
-// 	return nil
-// }
+func (scope *Scope) PrimaryField() *Field {
+	if primaryFields := scope.GetModelStruct().PrimaryFields; len(primaryFields) > 0 {
+		if len(primaryFields) > 1 {
+			if field, ok := scope.FieldByName("id"); ok {
+				return field
+			}
+		}
+		return scope.PrimaryFields()[0]
+	}
+	return nil
+}
 
 // PrimaryKey get main primary field's db name
-// func (scope *Scope) PrimaryKey() string {
-// 	if field := scope.PrimaryField(); field != nil {
-// 		return field.DBName
-// 	}
-// 	return ""
-// }
+func (scope *Scope) PrimaryKey() string {
+	if field := scope.PrimaryField(); field != nil {
+		return field.DBName
+	}
+	return ""
+}
 
 // PrimaryKeyZero check main primary field's value is blank or not
 // func (scope *Scope) PrimaryKeyZero() bool {
@@ -842,10 +843,14 @@ func (scope *Scope) groupSQL() string {
 // }
 
 func (scope *Scope) prepareQuerySQL() {
+	// log.Println(scope.selectSQL())
+	// log.Println(scope.QuotedTableName())
+	// log.Println(scope.CombinedConditionSql())
 	if scope.Search.raw {
 		scope.Raw(scope.CombinedConditionSql())
 	} else {
-		scope.Raw(fmt.Sprintf("SELECT %v FROM %v %v", scope.selectSQL(), scope.QuotedTableName(), scope.CombinedConditionSql()))
+		// scope.Raw(fmt.Sprintf("SELECT %v FROM %v %v", scope.selectSQL(), scope.QuotedTableName(), scope.CombinedConditionSql()))
+		scope.Raw(scope.selectSQL())
 	}
 	return
 }
@@ -1162,38 +1167,38 @@ func (scope *Scope) getTableOptions() string {
 // }
 
 // func (scope *Scope) createTable() *Scope {
-	// var tags []string
-	// var primaryKeys []string
-	// var primaryKeyInColumnType = false
-	// for _, field := range scope.GetModelStruct().StructFields {
-	// 	if field.IsNormal {
-	// 		sqlTag := scope.Dialect().DataTypeOf(field)
+// var tags []string
+// var primaryKeys []string
+// var primaryKeyInColumnType = false
+// for _, field := range scope.GetModelStruct().StructFields {
+// 	if field.IsNormal {
+// 		sqlTag := scope.Dialect().DataTypeOf(field)
 
-	// 		// Check if the primary key constraint was specified as
-	// 		// part of the column type. If so, we can only support
-	// 		// one column as the primary key.
-	// 		if strings.Contains(strings.ToLower(sqlTag), "primary key") {
-	// 			primaryKeyInColumnType = true
-	// 		}
+// 		// Check if the primary key constraint was specified as
+// 		// part of the column type. If so, we can only support
+// 		// one column as the primary key.
+// 		if strings.Contains(strings.ToLower(sqlTag), "primary key") {
+// 			primaryKeyInColumnType = true
+// 		}
 
-	// 		tags = append(tags, scope.Quote(field.DBName)+" "+sqlTag)
-	// 	}
+// 		tags = append(tags, scope.Quote(field.DBName)+" "+sqlTag)
+// 	}
 
-	// 	if field.IsPrimaryKey {
-	// 		primaryKeys = append(primaryKeys, scope.Quote(field.DBName))
-	// 	}
-	// 	scope.createJoinTable(field)
-	// }
+// 	if field.IsPrimaryKey {
+// 		primaryKeys = append(primaryKeys, scope.Quote(field.DBName))
+// 	}
+// 	scope.createJoinTable(field)
+// }
 
-	// var primaryKeyStr string
-	// if len(primaryKeys) > 0 && !primaryKeyInColumnType {
-	// 	primaryKeyStr = fmt.Sprintf(", PRIMARY KEY (%v)", strings.Join(primaryKeys, ","))
-	// }
+// var primaryKeyStr string
+// if len(primaryKeys) > 0 && !primaryKeyInColumnType {
+// 	primaryKeyStr = fmt.Sprintf(", PRIMARY KEY (%v)", strings.Join(primaryKeys, ","))
+// }
 
-	// scope.Raw(fmt.Sprintf("CREATE TABLE %v (%v %v)%s", scope.QuotedTableName(), strings.Join(tags, ","), primaryKeyStr, scope.getTableOptions())).Exec()
+// scope.Raw(fmt.Sprintf("CREATE TABLE %v (%v %v)%s", scope.QuotedTableName(), strings.Join(tags, ","), primaryKeyStr, scope.getTableOptions())).Exec()
 
-	// scope.autoIndex()
-	// return scope
+// scope.autoIndex()
+// return scope
 // }
 
 func (scope *Scope) dropTable() *Scope {
@@ -1259,24 +1264,24 @@ func (scope *Scope) removeIndex(indexName string) {
 }
 
 // func (scope *Scope) autoMigrate() *Scope {
-	// tableName := scope.TableName()
-	// quotedTableName := scope.QuotedTableName()
+// tableName := scope.TableName()
+// quotedTableName := scope.QuotedTableName()
 
-	// if !scope.Dialect().HasTable(tableName) {
-	// 	scope.createTable()
-	// } else {
-	// 	for _, field := range scope.GetModelStruct().StructFields {
-	// 		if !scope.Dialect().HasColumn(tableName, field.DBName) {
-	// 			if field.IsNormal {
-	// 				sqlTag := scope.Dialect().DataTypeOf(field)
-	// 				scope.Raw(fmt.Sprintf("ALTER TABLE %v ADD %v %v;", quotedTableName, scope.Quote(field.DBName), sqlTag)).Exec()
-	// 			}
-	// 		}
-	// 		scope.createJoinTable(field)
-	// 	}
-	// 	scope.autoIndex()
-	// }
-	// return scope
+// if !scope.Dialect().HasTable(tableName) {
+// 	scope.createTable()
+// } else {
+// 	for _, field := range scope.GetModelStruct().StructFields {
+// 		if !scope.Dialect().HasColumn(tableName, field.DBName) {
+// 			if field.IsNormal {
+// 				sqlTag := scope.Dialect().DataTypeOf(field)
+// 				scope.Raw(fmt.Sprintf("ALTER TABLE %v ADD %v %v;", quotedTableName, scope.Quote(field.DBName), sqlTag)).Exec()
+// 			}
+// 		}
+// 		scope.createJoinTable(field)
+// 	}
+// 	scope.autoIndex()
+// }
+// return scope
 // }
 
 func (scope *Scope) autoIndex() *Scope {

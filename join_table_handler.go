@@ -55,27 +55,27 @@ type JoinTableHandler struct {
 // }
 
 // // Setup initialize a default join table handler
-// func (s *JoinTableHandler) Setup(relationship *Relationship, tableName string, source reflect.Type, destination reflect.Type) {
-// 	s.TableName = tableName
+func (s *JoinTableHandler) Setup(relationship *Relationship, tableName string, source reflect.Type, destination reflect.Type) {
+	s.TableName = tableName
 
-// 	s.Source = JoinTableSource{ModelType: source}
-// 	s.Source.ForeignKeys = []JoinTableForeignKey{}
-// 	for idx, dbName := range relationship.ForeignFieldNames {
-// 		s.Source.ForeignKeys = append(s.Source.ForeignKeys, JoinTableForeignKey{
-// 			DBName:            relationship.ForeignDBNames[idx],
-// 			AssociationDBName: dbName,
-// 		})
-// 	}
+	s.Source = JoinTableSource{ModelType: source}
+	s.Source.ForeignKeys = []JoinTableForeignKey{}
+	for idx, dbName := range relationship.ForeignFieldNames {
+		s.Source.ForeignKeys = append(s.Source.ForeignKeys, JoinTableForeignKey{
+			DBName:            relationship.ForeignDBNames[idx],
+			AssociationDBName: dbName,
+		})
+	}
 
-// 	s.Destination = JoinTableSource{ModelType: destination}
-// 	s.Destination.ForeignKeys = []JoinTableForeignKey{}
-// 	for idx, dbName := range relationship.AssociationForeignFieldNames {
-// 		s.Destination.ForeignKeys = append(s.Destination.ForeignKeys, JoinTableForeignKey{
-// 			DBName:            relationship.AssociationForeignDBNames[idx],
-// 			AssociationDBName: dbName,
-// 		})
-// 	}
-// }
+	s.Destination = JoinTableSource{ModelType: destination}
+	s.Destination.ForeignKeys = []JoinTableForeignKey{}
+	for idx, dbName := range relationship.AssociationForeignFieldNames {
+		s.Destination.ForeignKeys = append(s.Destination.ForeignKeys, JoinTableForeignKey{
+			DBName:            relationship.AssociationForeignDBNames[idx],
+			AssociationDBName: dbName,
+		})
+	}
+}
 
 // // Table return join table's table name
 // func (s JoinTableHandler) Table(db *DB) string {

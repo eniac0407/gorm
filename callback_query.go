@@ -1,9 +1,9 @@
 package gorm
 
 import (
-	// "errors"
-	// "fmt"
-	// "reflect"
+	"errors"
+	"log"
+	"reflect"
 )
 
 // Define callbacks for querying
@@ -19,86 +19,80 @@ func queryCallback(scope *Scope) {
 	// 	return
 	// }
 
-	// //we are only preloading relations, dont touch base model
+	//we are only preloading relations, dont touch base model
 	// if _, skip := scope.InstanceGet("gorm:only_preload"); skip {
 	// 	return
 	// }
 
-	// defer scope.trace(NowFunc())
+	defer scope.trace(NowFunc())
 
-	// var (
-	// 	isSlice, isPtr bool
-	// 	resultType     reflect.Type
-	// 	results        = scope.IndirectValue()
-	// )
+	var (
+		isSlice, isPtr bool
+		resultType     reflect.Type
+		results        = scope.IndirectValue()
+	)
 
-	// if orderBy, ok := scope.Get("gorm:order_by_primary_key"); ok {
-	// 	if primaryField := scope.PrimaryField(); primaryField != nil {
-	// 		scope.Search.Order(fmt.Sprintf("%v.%v %v", scope.QuotedTableName(), scope.Quote(primaryField.DBName), orderBy))
-	// 	}
-	// }
+	if kind := results.Kind(); kind == reflect.Slice {
+		isSlice = true
+		resultType = results.Type().Elem()
+		results.Set(reflect.MakeSlice(results.Type(), 0, 0))
 
-	// if value, ok := scope.Get("gorm:query_destination"); ok {
-	// 	results = indirect(reflect.ValueOf(value))
-	// }
+		if resultType.Kind() == reflect.Ptr {
+			isPtr = true
+			resultType = resultType.Elem()
+		}
+	} else if kind != reflect.Struct {
+		scope.Err(errors.New("unsupported destination, should be slice or struct"))
+		return
+	}
 
-	// if kind := results.Kind(); kind == reflect.Slice {
-	// 	isSlice = true
-	// 	resultType = results.Type().Elem()
-	// 	results.Set(reflect.MakeSlice(results.Type(), 0, 0))
+	scope.prepareQuerySQL()
 
-	// 	if resultType.Kind() == reflect.Ptr {
-	// 		isPtr = true
-	// 		resultType = resultType.Elem()
-	// 	}
-	// } else if kind != reflect.Struct {
-	// 	scope.Err(errors.New("unsupported destination, should be slice or struct"))
-	// 	return
-	// }
+	if !scope.HasError() {
+		scope.db.RowsAffected = 0
 
-	// scope.prepareQuerySQL()
+		// if str, ok := scope.Get("gorm:query_hint"); ok {
+		// 	scope.SQL = fmt.Sprint(str) + scope.SQL
+		// }
 
-	// if !scope.HasError() {
-	// 	scope.db.RowsAffected = 0
+		// if str, ok := scope.Get("gorm:query_option"); ok {
+		// 	scope.SQL += addExtraSpaceIfExist(fmt.Sprint(str))
+		// }
 
-	// 	if str, ok := scope.Get("gorm:query_hint"); ok {
-	// 		scope.SQL = fmt.Sprint(str) + scope.SQL
-	// 	}
+		if rows, err := scope.SQLDB().Query(scope.SQL, scope.SQLVars...); scope.Err(err) == nil {
+			defer rows.Close()
 
-	// 	if str, ok := scope.Get("gorm:query_option"); ok {
-	// 		scope.SQL += addExtraSpaceIfExist(fmt.Sprint(str))
-	// 	}
+			columns, _ := rows.Columns()
+			for rows.Next() {
+				scope.db.RowsAffected++
 
-	// 	if rows, err := scope.SQLDB().Query(scope.SQL, scope.SQLVars...); scope.Err(err) == nil {
-	// 		defer rows.Close()
+				elem := results
+				if isSlice {
+					elem = reflect.New(resultType).Elem()
+				}
 
-	// 		columns, _ := rows.Columns()
-	// 		for rows.Next() {
-	// 			scope.db.RowsAffected++
+				scope.scan(rows, columns, scope.New(elem.Addr().Interface()).Fields())
 
-	// 			elem := results
-	// 			if isSlice {
-	// 				elem = reflect.New(resultType).Elem()
-	// 			}
+				if isSlice {
+					if isPtr {
+						results.Set(reflect.Append(results, elem.Addr()))
+					} else {
+						results.Set(reflect.Append(results, elem))
+					}
+				}
+			}
 
-	// 			scope.scan(rows, columns, scope.New(elem.Addr().Interface()).Fields())
-
-	// 			if isSlice {
-	// 				if isPtr {
-	// 					results.Set(reflect.Append(results, elem.Addr()))
-	// 				} else {
-	// 					results.Set(reflect.Append(results, elem))
-	// 				}
-	// 			}
-	// 		}
-
-	// 		if err := rows.Err(); err != nil {
-	// 			scope.Err(err)
-	// 		} else if scope.db.RowsAffected == 0 && !isSlice {
-	// 			scope.Err(ErrRecordNotFound)
-	// 		}
-	// 	}
-	// }
+			if err := rows.Err(); err != nil {
+				scope.Err(err)
+			} else if scope.db.RowsAffected == 0 && !isSlice {
+				scope.Err(ErrRecordNotFound)
+			}
+		}else{
+			log.Println(err)
+		}
+		log.Println(scope.SQL)
+		log.Println(scope.SQLVars...)
+	}
 }
 
 // afterQueryCallback will invoke `AfterFind` method after querying
